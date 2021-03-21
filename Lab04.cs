@@ -96,7 +96,6 @@
             foreach (var s in potentialZeros)
             {
                 prev.IntersectWith(s);
-                abc
             }
 
             return new List<int>(prev);
