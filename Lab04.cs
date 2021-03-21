@@ -77,16 +77,11 @@
             return ret;
         }
 
-        void _QuarantineTargetsBackward(List<int> Z, Graph g, bool[] couldBeZero)
+        void _QuarantineTargetsBackward(int z, List<Edge> pQ, bool[] couldBeZero)
         {
-            bool[] infected = new bool[g.VerticesCount];
-            double[] infectionTime = new double[g.VerticesCount];
-            List<Edge> pQ = new List<Edge>();
-
-            foreach (var v in Z) infected[v] = true;
-            for (int i = 0; i < g.VerticesCount; i++) foreach (Edge e in g.OutEdges(i)) if (e.To > i) pQ.Add(e);
-
-            pQ.Sort((Edge e1, Edge e2) => { return e2.Weight.CompareTo(e1.Weight); });
+            bool[] infected = new bool[couldBeZero.Length];
+            infected[z] = true;
+            double[] infectionTime = new double[couldBeZero.Length];
 
             foreach (Edge e in pQ)
             {
@@ -116,14 +111,15 @@
         /// <returns>Lista potencjalnych pacjentów zero, uporządkowana rosnąco</returns>
         public List<int> PotentialPatientsZero(List<int> S, Graph g)
         {
-            bool[] couldBeZero = new bool[g.VerticesCount];
-            for (int i = 0; i < couldBeZero.Length; i++)
-            {
-                couldBeZero[i] = true;
-            }
             List<int> ret = new List<int>();
+            List<Edge> pQ = new List<Edge>();
+            bool[] couldBeZero = new bool[g.VerticesCount];
 
-            foreach (int v in S) _QuarantineTargetsBackward(new List<int> { v }, g, couldBeZero);
+            for (int i = 0; i < couldBeZero.Length; i++) couldBeZero[i] = true;
+            for (int i = 0; i < g.VerticesCount; i++) foreach (Edge e in g.OutEdges(i)) if (e.To > i) pQ.Add(e);
+            pQ.Sort((Edge e1, Edge e2) => { return e2.Weight.CompareTo(e1.Weight); });
+
+            foreach (int v in S) _QuarantineTargetsBackward(v, pQ, couldBeZero);
 
             for (int i = 0; i < couldBeZero.Length; i++) if (couldBeZero[i]) ret.Add(i);
             return ret;
