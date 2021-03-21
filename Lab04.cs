@@ -53,8 +53,15 @@
             List<int> ret = new List<int>();
 
             foreach (var v in Z) infected[v] = true;
-            for (int i = 0; i < g.VerticesCount; i++) foreach (Edge e in g.OutEdges(i)) if (!(e.To < i || (infected[e.To] && infected[e.From]))) pQ.Add(e);
-            pQ.Sort((Edge e1, Edge e2) => { return Math.Sign(e1.Weight - e2.Weight); });
+            foreach (var v in Z) foreach (Edge e in g.OutEdges(v)) if (infected[e.To]) g.DelEdge(e);
+
+            for (int i = 0; i < g.VerticesCount; i++)
+                foreach (Edge e in g.OutEdges(i)) //if (!(e.To < i || (infected[e.To] && infected[e.From])))
+                {
+                    pQ.Add(e);
+                    g.DelEdge(e);
+                }
+            pQ.Sort((Edge e1, Edge e2) => { return e1.Weight.CompareTo(e2.Weight); });
 
             foreach (Edge e in pQ)
             {
@@ -125,5 +132,4 @@
             return ret;
         }
     }
-
 }
