@@ -45,8 +45,8 @@
                 }               
             }
                 
-            pQ.Sort((Edge e1, Edge e2) => { return Math.Sign(e1.Weight - e2.Weight); });
-            if (goBack) pQ.Reverse();
+            if (goBack) pQ.Sort((Edge e1, Edge e2) => { return Math.Sign(e2.Weight - e1.Weight); });
+            else pQ.Sort((Edge e1, Edge e2) => { return Math.Sign(e1.Weight - e2.Weight); });
 
             foreach (Edge e in pQ)
             {
@@ -71,6 +71,58 @@
             return ret;
         }
 
+        void __QuarantineTargets(List<int> Z, Graph g, bool goBack, int[] targets)
+        {
+            bool[] infected = new bool[g.VerticesCount];
+            double[] infectionTime = new double[g.VerticesCount];
+            foreach (var v in Z)
+            {
+                infected[v] = true;
+            }
+
+            List<Edge> pQ = new List<Edge>();
+            for (int i = 0; i < g.VerticesCount; i++)
+            {
+                if (infected[i])
+                {
+                    foreach (Edge e in g.OutEdges(i)) pQ.Add(e);
+                }
+                else
+                {
+                    foreach (Edge e in g.OutEdges(i))
+                    {
+                        if ((goBack || e.Weight != 0) && !infected[e.To])
+                        {
+                            pQ.Add(e);
+                        }
+                    }
+
+                }
+            }
+
+            if (goBack) pQ.Sort((Edge e1, Edge e2) => { return Math.Sign(e2.Weight - e1.Weight); });
+            else pQ.Sort((Edge e1, Edge e2) => { return Math.Sign(e1.Weight - e2.Weight); });
+
+            foreach (Edge e in pQ)
+            {
+                if (infected[e.To] != infected[e.From])
+                {
+                    if (infected[e.To] && (infectionTime[e.To] != e.Weight))
+                    {
+                        infected[e.From] = true;
+                        targets[e.To]++;
+                        infectionTime[e.From] = e.Weight;
+                    }
+                    else if (infectionTime[e.From] != e.Weight)
+                    {
+                        infected[e.To] = true;
+                        targets[e.To]++;
+                        infectionTime[e.To] = e.Weight;
+                    }
+                }
+            }
+        }
+
         /// <summary>
         /// Część II: wyznaczenie zbioru potencjalnych pacjentów zero.
         /// </summary>
@@ -83,9 +135,7 @@
 
             foreach(int v in S)
             {
-                List<int> z = new List<int>();
-                z.Add(v);
-                List<int> targets = _QuarantineTargets(z, g, true);
+                List<int> targets = _QuarantineTargets(new List<int> { v }, g, true);
                 var a = new HashSet<int>(targets);
                 potentialZeros.Add(a);
             }
