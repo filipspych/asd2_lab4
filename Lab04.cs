@@ -49,32 +49,11 @@
         {
             bool[] infected = new bool[g.VerticesCount];
             double[] infectionTime = new double[g.VerticesCount];
-            foreach (var v in Z)
-            {
-                infected[v] = true;
-            }
-            
             List<Edge> pQ = new List<Edge>();
-            for (int i = 0; i < g.VerticesCount; i++)
-            {
-                if (infected[i]) foreach (Edge e in g.OutEdges(i))
-                {
-                        if(e.To > i)
-                    pQ.Add(e);
-                    //g.DelEdge(e);
-                }
-                else
-                {
-                    foreach (Edge e in g.OutEdges(i))
-                    {
-                            if (e.To > i)
-                                pQ.Add(e);
-                        //g.DelEdge(e);
-                    }
-                }
-               
-            }
-                
+            List<int> ret = new List<int>();
+
+            foreach (var v in Z) infected[v] = true;
+            for (int i = 0; i < g.VerticesCount; i++) foreach (Edge e in g.OutEdges(i)) if (e.To > i) pQ.Add(e);
             pQ.Sort((Edge e1, Edge e2) => { return Math.Sign(e1.Weight - e2.Weight); });
 
             foreach (Edge e in pQ)
@@ -85,20 +64,15 @@
                     {
                         infected[e.From] = true;
                         infectionTime[e.From] = e.Weight;
-                    }
-                    
-                    if (infected[e.From] && (infectionTime[e.From] != e.Weight))
+                    } else if (infected[e.From] && (infectionTime[e.From] != e.Weight))
                     {
                         infected[e.To] = true;
                         infectionTime[e.To] = e.Weight;
                     }
                 }
-
             }
-            List<int> ret = new List<int>();
-            for (int i = 0; i < g.VerticesCount; i++)
-                if (infected[i]) ret.Add(i);
 
+            for (int i = 0; i < g.VerticesCount; i++) if (infected[i]) ret.Add(i);
             return ret;
         }
 
@@ -106,34 +80,10 @@
         {
             bool[] infected = new bool[g.VerticesCount];
             double[] infectionTime = new double[g.VerticesCount];
-            foreach (var v in Z)
-            {
-                infected[v] = true;
-            }
-
             List<Edge> pQ = new List<Edge>();
-            for (int i = 0; i < g.VerticesCount; i++)
-            {
-                if (infected[i])
-                {
-                    foreach (Edge e in g.OutEdges(i))
-                    {
-                        if (e.To > i)
-                            pQ.Add(e);
-                    }
-                }
-                else
-                {
-                    foreach (Edge e in g.OutEdges(i))
-                    {
-                        if (e.To > i)
-                        {
-                            pQ.Add(e);
-                        }
-                    }
-                }
-            }
 
+            foreach (var v in Z) infected[v] = true;
+            for (int i = 0; i < g.VerticesCount; i++) foreach (Edge e in g.OutEdges(i)) if (e.To > i) pQ.Add(e);
             pQ.Sort((Edge e1, Edge e2) => { return Math.Sign(e2.Weight - e1.Weight); });
 
             foreach (Edge e in pQ)
@@ -144,9 +94,7 @@
                     {
                         infected[e.From] = true;
                         infectionTime[e.From] = e.Weight;
-                    }
-                    
-                    if (infected[e.From] && (infectionTime[e.From] != e.Weight))
+                    } else if (infected[e.From] && (infectionTime[e.From] != e.Weight))
                     {
                         infected[e.To] = true;
                         infectionTime[e.To] = e.Weight;
@@ -154,10 +102,7 @@
                 }
             }
 
-            for (int i = 0; i < targets.Length; i++)
-            {
-                if(infected[i]) targets[i]++;
-            }
+            for (int i = 0; i < targets.Length; i++) if (infected[i]) targets[i]++;
         }
 
         /// <summary>
@@ -171,21 +116,10 @@
             int[] potentialZeros = new int[g.VerticesCount];
             List<int> ret = new List<int>();
 
-            foreach(int v in S)
-            {
-                _QuarantineTargetsBackward(new List<int> { v }, g, potentialZeros);
-            }
+            foreach (int v in S) _QuarantineTargetsBackward(new List<int> { v }, g, potentialZeros);
 
-            for (int i = 0; i < potentialZeros.Length; i++)
-            {
-                if (potentialZeros[i] == S.Count)
-                {
-                    ret.Add(i);
-                }
-            }
-
+            for (int i = 0; i < potentialZeros.Length; i++) if (potentialZeros[i] == S.Count) ret.Add(i);
             return ret;
-            
         }
     }
 
