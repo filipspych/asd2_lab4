@@ -4,6 +4,35 @@
     using System;
     using System.Collections.Generic;
 
+
+    static class ExtensionsToGraph
+    {
+        public static void Print(this Graph g)
+        {
+            Console.WriteLine($"GRAF. wierzcholkow: {g.VerticesCount}, krawedzi: {g.EdgesCount}");
+            for (int i = 0; i < g.VerticesCount; i++)
+            {
+                Console.Write($"{i}->");
+                if (g.OutDegree(i) == 0)
+                {
+                    Console.WriteLine("BRAK");
+                    continue;
+                }
+                foreach (Edge e in g.OutEdges(i))
+                {
+                    Console.Write($"{e.To} ");
+                }
+                Console.WriteLine();
+            }
+        }
+
+        public static void Image(this Graph g)
+        {
+            GraphExport graphExport = new GraphExport(true, null, "chrome", "", null);
+            graphExport.Export(g);
+        }
+    }
+
     public class Lab04 : System.MarshalByRefObject
     {
         /// <summary>
@@ -17,53 +46,71 @@
             return _QuarantineTargets(Z, g, false);
         }
 
+        bool isRelevant(int to, double weight, double previousFrameTime, bool goBack, bool[] infected, bool[] newlyInfected)
+        {
+            if (goBack)
+            {
+                if (previousFrameTime <= weight) return false;
+            } else
+            {
+                if (previousFrameTime >= weight) return false; 
+            }
+
+            return !infected[to] && !newlyInfected[to];
+        }
+
+        // moves newly infected to the infected and adds all new relevant edges to the queue (only edges from newly infected to (not infected and not newly infected), 
+        // only edges lesser/greater than previousTimeFrame)
+        void changeFrame(bool[] infected, bool[] newlyInfected, EdgesPriorityQueue edges, double previousFrameTime, Graph g, bool goBack)
+        {
+            int l = newlyInfected.Length;
+            for (int i = 0; i < l; i++)
+            {
+                if (newlyInfected[i])
+                {
+                    foreach (Edge e in g.OutEdges(i)) if (isRelevant(e.To, e.Weight, previousFrameTime, goBack, infected, newlyInfected))
+                    {
+                        edges.Put(e);
+                    }
+                    // todo mozliwe usprawnienie - uzyc setow (contains ma O(1))
+                    newlyInfected[i] = false;
+                    infected[i] = true;
+                }
+            }
+        }
+
         List<int> _QuarantineTargets(List<int> Z, Graph g, bool goBack)
         {
             bool[] infected = new bool[g.VerticesCount];
-            double[] infectionTime = new double[g.VerticesCount];
+            bool[] newlyInfected = new bool[g.VerticesCount];
+            EdgesPriorityQueue pQ;
+            if (goBack) pQ = new EdgesMaxPriorityQueue();
+            else pQ = new EdgesMinPriorityQueue();
+
             foreach (var v in Z)
             {
-                infected[v] = true;
+                newlyInfected[v] = true;
             }
-            
-            List<Edge> pQ = new List<Edge>();
-            for (int i = 0; i < g.VerticesCount; i++)
-            {
-                if (infected[i])
-                {
-                    foreach (Edge e in g.OutEdges(i)) pQ.Add(e);
-                } else
-                {
-                    foreach (Edge e in g.OutEdges(i))
-                    {
-                        if ((goBack || e.Weight != 0) && !infected[e.To])
-                        {
-                            pQ.Add(e);
-                        }
-                    }
-                    
-                }               
-            }
-                
-            pQ.Sort((Edge e1, Edge e2) => { return Math.Sign(e1.Weight - e2.Weight); });
-            if (goBack) pQ.Reverse();
 
-            foreach (Edge e in pQ)
+            changeFrame(infected, newlyInfected, pQ, (goBack)?double.MaxValue:double.MinValue, g, goBack);
+
+            if (pQ.Empty) return Z;
+
+            double infectionFrame = pQ.Peek().Weight;
+            while (!pQ.Empty)
             {
-                if (infected[e.To] != infected[e.From])
+                Edge e = pQ.Get();
+                if (infectionFrame != e.Weight)
                 {
-                    if (infected[e.To] && (infectionTime[e.To] != e.Weight))
-                    {
-                        infected[e.From] = true;
-                        infectionTime[e.From] = e.Weight;
-                    }
-                    else if (infectionTime[e.From] != e.Weight)
-                    {
-                        infected[e.To] = true;
-                        infectionTime[e.To] = e.Weight;
-                    }
+                    changeFrame(infected, newlyInfected, pQ, infectionFrame, g, goBack);
+                    infectionFrame = e.Weight;
                 }
+
+                newlyInfected[e.To] = true;
+                if (pQ.Empty) changeFrame(infected, newlyInfected, pQ, infectionFrame, g, goBack);
             }
+
+
             List<int> ret = new List<int>();
             for (int i = 0; i < g.VerticesCount; i++)
                 if (infected[i]) ret.Add(i);
